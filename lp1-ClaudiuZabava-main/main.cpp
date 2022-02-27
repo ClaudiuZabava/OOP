@@ -130,10 +130,9 @@ public:
 
     void diferenta(const multimi &p2, multimi &p3);
 
-
     ~multimi() /// Pentru a intelege urmatoarele linii de cod, citeste README: -> Pt4.
     {
-        delete[] elemente;
+        delete[] elemente; /// Este nevoie sa eliberam memoria deoarece am declarat dinamic parametrul elemente pt fiecare obiect.
     }
 
 };
@@ -406,7 +405,7 @@ int main()
     cout << '\n';
     cout << "Rezultatul operatiei '+=' este";
     multime1+=multime2;
-    multime1.afisare(); /// afisam multimea1 in urma operatiei '+=' pentru a vedea rezultatul
+    multime1.afisare(); /// afisam multimea1 in urma operatiei '+=' pentru a vedea rezultatul (daca operatia nu s-a putut desfasura, multimea1 e intacta)
 
     return 0;
 }
