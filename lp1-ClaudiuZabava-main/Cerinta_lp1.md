@@ -3,12 +3,15 @@ Mulțimi finite de numere întregi construite prin transformarea unui vector în
 Are drept parametrii:
 - Cardinalul mulțimii (int)
 - Elementele prezente în mulțime
+
 <br/>
+
 Metode ce se doresc a fi implementate:
 - determinarea celui de-al treilea cel mai mic element prezent în mulțime
 - reuniunea a două mulțimi; 
 - intersecția a două mulțimi; 
 - diferența dintre două mulțimi
+
 <br/>
 Bonus:
 <br/>
