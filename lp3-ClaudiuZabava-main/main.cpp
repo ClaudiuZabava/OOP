@@ -4,35 +4,19 @@
 #include <string>
 #include <cstring>
 #include <ctime>
+#include <cstdlib>
 
 using namespace std;
-
-/////// !! CITIT MAI JOS || OBSERVATIE !! : Proiectul nu e 100%, mai are nevoie de un meniu interactiv si tratarea tuturor exceptiilo///////
-/*
-In creearea acestor clase, enuntul cerea utilizarea a doua structuri de date alocate Dinamic.
-Eu am ales doua array-uri ( stock si vandute).
-
-Am vazut ulterior ca in enunt, pe un rand separat, scria " Structura de date:   set<perechi<tip_masina, nou (bool)>> ".
-
-Nu stiam mai exact unde sa creez aceasta structura intrucat, cum am mentionat si mai sus, ca structuri alocate Dinamic am ales array-uri.
-
-Cu toate asta am implementat si setul asta, in functia make_this_set() ce apartine clasei Vanzare.
-
-Astfel, voiam sa va rog sa aruncati o privire si acolo, sa stiu daca e ok ca setul sa fie implementat acolo si daca e implementat corect.
-
-*/
-
-
 
 class masini{
 
 protected:
-    float pret;
+    double pret;
     int litraj;
     string denumire;
     string tip;
 
-    void set_pret(float x);
+    void set_pret(double x);
     void set_litraj(int x);
     void set_denumire(char  y[10001]);
     void set_denumire_null();
@@ -53,10 +37,40 @@ public:
     }
 
 
-    masini(float p, int l, char nume[10001])
+    masini(double p, int l, char nume[10001])
     {
-        set_pret(p);
-        set_litraj(l);
+        try
+        {
+            if(p<=0)
+                throw " !Pretul introdus este negativ sau 0 (nu vindem masini gratis)";
+            else
+                set_pret(p);
+        }
+        catch(const char *e2)
+        {
+            cout << e2 << '\n';
+            cout << " Programul va genera un pert aleatoriu" << '\n';
+            p=rand() % 900000 + 500;
+            set_pret(p);
+        }
+
+
+        try
+        {
+            if(l<=0)
+                throw " !Litrajul introdus este negativ sau 0 (masinile nu merg pe aer).";
+            else
+                set_litraj(l);
+        }
+        catch(const char *e2)
+        {
+            cout << e2 << '\n';
+            cout << " Programul va genera un litraj aleatoriu" << '\n';
+            l=rand() % 6000 + 1000;
+            set_litraj(l);
+        }
+
+
         set_denumire(nume);
         set_tip_necunoscut();
     }
@@ -97,7 +111,7 @@ public:
 
     }
 
-    float get_pret() const;
+    double get_pret() const;
 
     int get_litraj() const;
 
@@ -105,7 +119,7 @@ public:
     string get_tip() const;
 
     void aplica_reducere1();
-    void aplica_reducere2(int rd);
+    void aplica_reducere2(double rd);
 
 
     virtual void afis_masina()
@@ -118,10 +132,11 @@ public:
         cout << "undefined car type: trebuie sa apelati aceasta functie asupra unui tip de masina" << '\n';
     }
 
+
     friend istream &operator>>(istream &in, masini &p1)
     {
         char ch[10001];
-        float pr;
+        double pr;
         int l;
 
 
@@ -129,10 +144,84 @@ public:
         in.getline(ch,10001);
 
         cout << "Introduceti pretul masinii: ";
-        in >> pr;
+        try
+        {
+            in >> pr;
+            if(in.fail())
+                throw " !Se pare ca nu ati introdus o valoare numerica valida." ;
+        }
+        catch(const char *e2)
+        {
+            in.ignore(256,'\n');
+            in.clear();
+            string dummy;
+            in >> dummy;
+            cout << e2 << '\n';
+            cout << " Programul va genera un pret aleatoriu." << '\n';
+            pr=rand() % 100000 + 500;
+        }
+        while (pr <=0)
+        {
+            cout << "Pretul unei masini nu poate fi negativ sau 0 (nu se dau masini pe gratis)." << '\n';
+            cout << "Introduceti din nou pretul:" << '\n';
+            try
+            {
+                in >> pr;
+                if(in.fail())
+                    throw " !Se pare ca nu ati introdus o valoare numerica valida." ;
+            }
+            catch(const char *e2)
+            {
+                in.ignore(256,'\n');
+                in.clear();
+                string dummy;
+                in >> dummy;
+                cout << e2 << '\n';
+                cout << " Programul va genera un pret aleatoriu." << '\n';
+                pr=rand() % 100000 + 500;
+            }
+
+        }
+
 
         cout << "Introduceti capacitatea cilindrica / litrajul masinii: ";
-        in >> l;
+        try
+        {
+            in >> l;
+            if(in.fail())
+                throw " !Se pare ca nu ati introdus o valoare numerica valida." ;
+        }
+        catch(const char *e2)
+        {
+            in.ignore(256,'\n');
+            in.clear();
+            string dummy;
+            in >> dummy;
+            cout << e2 << '\n';
+            cout << " Programul va genera un litraj aleatoriu." << '\n';
+            l=rand() % 6000 + 1000;
+        }
+        while( l<=0 )
+        {
+            cout << "Litrajul unei masini nu poate fi negativ sau 0 (masinia nu merge pe aer)." << '\n';
+            cout << "Introduceti din nou litrajul:" << '\n';
+            try
+            {
+                in >> l;
+                if(in.fail())
+                    throw " !Se pare ca nu ati introdus o valoare numerica valida." ;
+            }
+            catch(const char *e2)
+            {
+                in.ignore(256,'\n');
+                in.clear();
+                string dummy;
+                in >> dummy;
+                cout << e2 << '\n';
+                cout << " Programul va genera un litraj aleatoriu." << '\n';
+                l=rand() % 6000 + 1000;
+            }
+        }
 
         p1.set_pret(pr);
         p1.set_litraj(l);
@@ -162,12 +251,28 @@ public:
         return out;
     }
 
-    ~masini() = default;
+
+/// De ce e destructorul masini virtual?
+/*
+Mult mai jos, in clasa Vanzare, avem 2 array-uri de pointeri tip 'masini'. In destructorul de acolo, se sterg aceste array-ui.
+Conform teoriei, ca sa facem asta trebuie sa stergem vectorul de adrese , dar si continutul de la fiecare adresa.
+Astfel, cum indica si compilatorul printr-un warning, a fost nevoie de un destructor virtual al clasei masini.
+*/
+
+    virtual ~masini()
+    {
+        if(denumire != "")
+            denumire.clear();
+        if(tip != "")
+            tip.clear();
+        pret=0;
+        litraj=0;
+    }
 
 };
 
 
-void masini::set_pret(float x)
+void masini::set_pret(double x)
 {
     pret = x;
 }
@@ -197,7 +302,7 @@ void masini::set_tip_necunoscut()
 }
 
 
-float masini::get_pret() const
+double masini::get_pret() const
 {
     return pret;
 }
@@ -217,13 +322,13 @@ string masini::get_tip() const
 
 void masini::aplica_reducere1()
 {
-    float pret_t;
+    double pret_t;
     pret_t=get_pret() - get_pret() * 0.1;
     set_pret(pret_t);
 }
-void masini::aplica_reducere2(int rd)
+void masini::aplica_reducere2(double rd)
 {
-    float pret_t = get_pret() - get_pret() * (rd/100 );
+    double pret_t = get_pret() - get_pret() * (rd/100 );
     set_pret(pret_t);
 
 }
@@ -236,30 +341,62 @@ class Mini: public masini{
 
 protected:
 
-    float lungime;
+    double lungime;
     int an;
 
-    void set_lungime(float x);
+    void set_lungime(double x);
     void set_an(int x);
 
 public:
 
     Mini():masini()
     {
+        char temp[10001]="Mini";
         set_lungime(0);
         set_an(0);
-        set_tip_masina("Mini");
+        set_tip_masina(temp);
     }
 
 
-    Mini(float p, int l, char nume[10001], float lg, int anul):masini(p,l,nume)
+    Mini(double p, int l, char nume[10001], double lg, int anul):masini(p,l,nume)
     {
-        set_lungime(lg);
-        if (prezent-anul > 1 || anul > prezent) /// daca utilizatorul introduce un an necorespunzator pentru aceasta masina , programul corecteaza eroarea punand anul prezent.
+        char temp[10001]="Mini";
+
+
+        try
+        {
+            if(lg > 4 || lg < 1)
+                throw " !Lungimea introdusa nu apartine intervalului [1,4]";
+            else
+                set_lungime(lg);
+        }
+        catch(const char *e3)
+        {
+            cout << e3 << '\n';
+            cout << " Programul va seta lungimea ca fiind cel ami apropiat capat al intervalului." << '\n';
+            if(lg>4)
+                lg=4;
+            else
+                lg=1;
+            set_lungime(lg);
+        }
+
+
+        try
+        {
+            if(prezent-anul > 1 || anul > prezent)
+                throw " !Ati introdus un an prea vechi sau inexistent pentru o masina tip Mini.";
+            else
+                set_an(anul);
+        }
+        catch(const char *e3)
+        {
+            cout << e3 << '\n';
+            cout << " Programul va seta anul masinii ca fiind anul curent." << '\n';
             set_an(prezent);
-        else
-            set_an(anul);
-        set_tip_masina("Mini");
+        }
+
+        set_tip_masina(temp);
     }
 
 
@@ -297,7 +434,7 @@ public:
 
     }
 
-    float get_lungime() const;
+    double get_lungime() const;
 
     int get_anul() const;
 
@@ -307,8 +444,9 @@ public:
 
     friend istream &operator>>(istream &in, Mini &p2)
     {
-        float lg;
+        double lg;
         int anul;
+        char temp[10001]="Mini";
 
 
         cout << "Se vor introduce datele masinii: "<< '\n';
@@ -317,26 +455,83 @@ public:
 
 
         cout << "Introduceti lungimea masinii ( minim 1 , maxim 4): ";
-        in >> lg;
-        while (lg > 4 || lg <= 0 )
+        try
+        {
+            in >> lg;
+            if(in.fail())
+                throw " !Se pare ca nu ati introdus o valoare numerica valida. Programul va seta automat o lungime acceptabila." ;
+        }
+        catch(const char *e3)
+        {
+            in.ignore(256,'\n');
+            in.clear();
+            string dummy;
+            in >> dummy;
+            cout << e3 << '\n';
+            lg=3;
+        }
+        while (lg > 4 || lg < 1 )
         {
             cout << "Ati introdus dimensiuni necorespunzatoare acestui tip de masina" << '\n';
             cout << "Lungimea unei masini Mini este de maxim 4m si minim 1m. Introduceti din nou lungimea:" << '\n';
-            in >> lg;
+            try
+            {
+                in >> lg;
+                if(in.fail())
+                    throw " !Se pare ca nu ati introdus o valoare numerica valida. Programul va seta automat o lungime acceptabila." ;
+            }
+            catch(const char *e3)
+            {
+                in.ignore(256,'\n');
+                in.clear();
+                string dummy;
+                in >> dummy;
+                cout << e3 << '\n';
+                lg=3;
+            }
         }
 
+
         cout << "Introduceti anul de fabricatie al masinii: ";
-        in >> anul;
+        try
+        {
+            in >> anul;
+            if(in.fail())
+                throw " !Se pare ca nu ati introdus o valoare numerica valida. Programul va seta anul la cel curent." ;
+        }
+        catch(const char *e3)
+        {
+            in.ignore(256,'\n');
+            in.clear();
+            string dummy;
+            in >> dummy;
+            cout << e3 << '\n';
+            anul= prezent;
+        }
         while(prezent-anul >1 || anul > prezent) // in general, o masina recent fabricata este cumparata in timp de 1 an. Daca diferenta de data este mai mare de 1 ani -> masina e SH , ceeea ce corespunde acestui tip.
         {
             cout << "Ati introdus un an necorespunzator acestui tip de masina" << '\n';
             cout << "Aceasta masina nu poate fi mai veche de 1 an. Introduceti din nou anul: " << '\n';
-            in >> anul;
+            try
+            {
+                in >> anul;
+                if(in.fail())
+                    throw " !Se pare ca nu ati introdus o valoare numerica valida. Programul va seta anul la cel curent." ;
+            }
+            catch(const char *e3)
+            {
+                in.ignore(256,'\n');
+                in.clear();
+                string dummy;
+                in >> dummy;
+                cout << e3 << '\n';
+                anul= prezent;
+            }
         }
 
         p2.set_lungime(lg);
         p2.set_an(anul);
-        p2.set_tip_masina("Mini");
+        p2.set_tip_masina(temp);
 
         in.get();
 
@@ -368,17 +563,17 @@ public:
 };
 
 
-void Mini::set_lungime(float x)
+void Mini::set_lungime(double x)
 {
-    lungime=x;
+   lungime = x;
 }
 void Mini::set_an(int x)
 {
-    an=x;
+   an = x;
 }
 
 
-float Mini::get_lungime() const
+double Mini::get_lungime() const
 {
     return lungime;
 }
@@ -406,34 +601,84 @@ class Mica: public masini{
 
 protected:
 
-    float lungime;
+    double lungime;
     int an;
-    float ampatament; // Conform cerintei, la o masina Mica apare ca variabila specifica spatiul interior / ampatamentul.
+    double ampatament; // Conform cerintei, la o masina Mica apare ca variabila specifica spatiul interior / ampatamentul.
 
-    void set_lungime(float x);
+    void set_lungime(double x);
     void set_an(int x);
-    void set_ampatament(float x);
+    void set_ampatament(double x);
 
 public:
 
     Mica():masini()
     {
+        char temp[10001]="Mica";
         set_lungime(0);
         set_an(0);
         set_ampatament(0);
-        set_tip_masina("Mica");
+        set_tip_masina(temp);
     }
 
 
-    Mica(float p, int l, char nume[10001], float lg, float amp, int anul):masini(p,l,nume)
+    Mica(double p, int l, char nume[10001], double lg, double amp, int anul):masini(p,l,nume)
     {
-        set_lungime(lg);
-        if (prezent-anul > 1 || anul > prezent)
+        char temp[10001]="Mica";
+
+        try
+        {
+            if(lg > 4.1 || lg < 3.85)
+                throw " !Lungimea introdusa nu apartine intervalului [3.85 , 4.1]";
+            else
+                set_lungime(lg);
+        }
+        catch(const char *e4)
+        {
+            cout << e4 << '\n';
+            cout << " Programul va seta lungimea ca fiind cel ami apropiat capat al intervalului." << '\n';
+            if(lg>4.1)
+                lg=4.1;
+            else
+                lg=3.85;
+            set_lungime(lg);
+        }
+
+
+        try
+        {
+            if(prezent-anul > 1 || anul > prezent)
+                throw " !Ati introdus un an prea vechi sau inexistent pentru o masina tip Mica.";
+            else
+                set_an(anul);
+        }
+        catch(const char *e4)
+        {
+            cout << e4 << '\n';
+            cout << " Programul va seta anul masinii ca fiind anul curent." << '\n';
             set_an(prezent);
-        else
-            set_an(anul);
-        set_ampatament(amp);
-        set_tip_masina("Mica");
+        }
+
+
+        try
+        {
+            if((amp >= get_lungime() && get_lungime() != 0 ) || amp <=0)
+                throw " !Ampatamentul introdus este negativ / nul / mai mare decat lungimea masinii.";
+            else
+                set_ampatament(amp);
+        }
+        catch(const char *e4)
+        {
+            cout << e4 << '\n';
+            cout << " Programul va seta automat un ampatament acceptabil" << '\n';
+            if(get_lungime()>=3.85)
+                amp=get_lungime()-1;
+            else
+                amp=0;
+            set_ampatament(amp);
+        }
+
+
+        set_tip_masina(temp);
     }
 
 
@@ -473,8 +718,8 @@ public:
 
     }
 
-    float get_lungime() const;
-    float get_ampatament() const;
+    double get_lungime() const;
+    double get_ampatament() const;
 
     int get_anul() const;
 
@@ -484,9 +729,10 @@ public:
 
     friend istream &operator>>(istream &in, Mica &p3)
     {
-        float lg;
-        float amp;
+        double lg;
+        double amp;
         int anul;
+        char temp[10001]="Mica";
 
 
         cout << "Se vor introduce datele masinii: "<< '\n';
@@ -495,36 +741,120 @@ public:
 
 
         cout << "Introduceti lungimea masinii (min 3.85 , max 4.1): ";
-        in >> lg;
-        while (lg > 4.1 || lg <3.85 )
+        try
         {
-            cout << "Ati introdus dimensiuni necorespunzatoare!" << '\n';
-            cout << "O masina mica are lungimea de minim 3.85m si maxim 4.1 m. Introduceti din nou lungimea: " << '\n';
             in >> lg;
+            if(in.fail())
+                throw " !Se pare ca nu ati introdus o valoare numerica valida. Programul va seta automat o lungime acceptabila." ;
+        }
+        catch(const char *e4)
+        {
+            in.ignore(256,'\n');
+            in.clear();
+            string dummy;
+            in >> dummy;
+            cout << e4 << '\n';
+            lg= 4;
+        }
+        while (lg > 4.1 || lg < 3.85 )
+        {
+            cout << "Ati introdus dimensiuni necorespunzatoare acestui tip de masina" << '\n';
+            cout << "Lungimea unei masini Mica este de maxim 4.1m si minim 3.85m. Introduceti din nou lungimea:" << '\n';
+            try
+            {
+                in >> lg;
+                if(in.fail())
+                    throw " !Se pare ca nu ati introdus o valoare numerica valida. Programul va seta automat o lungime acceptabila." ;
+            }
+            catch(const char *e4)
+            {
+                in.clear();
+                string dummy;
+                in >> dummy;
+                cout << e4 << '\n';
+                lg= 4;
+            }
         }
 
+
         cout << "Introduceti ampatamentul masinii (spatiu interior) : ";
-        in >> amp;
+        try
+        {
+            in >> amp;
+            if(in.fail())
+                throw " !Se pare ca nu ati introdus o valoare numerica valida. Programul va seta automat un ampatament acceptabil." ;
+        }
+        catch(const char *e4)
+        {
+            in.ignore(256,'\n');
+            in.clear();
+            string dummy;
+            in >> dummy;
+            cout << e4 << '\n';
+            amp=lg-1;
+        }
         while (amp <=0 || amp >=lg)
         {
             cout << "La o masina MICA, ampatamentul nu poate fi negativa sau mai mare decat intreaga masina" << '\n';
             cout << "Introduceti din nou dimensiunile ampatamentului: " << '\n';
-            in >> amp;
+            try
+            {
+                in >> amp;
+                if(in.fail())
+                    throw " !Se pare ca nu ati introdus o valoare numerica valida. Programul va seta automat un ampatament acceptabil." ;
+            }
+            catch(const char *e4)
+            {
+                in.ignore(256,'\n');
+                in.clear();
+                string dummy;
+                in >> dummy;
+                cout << e4 << '\n';
+                amp=lg-1;
+            }
         }
 
         cout << "Introduceti anul de fabricatie al masinii: ";
-        in >> anul;
-        while(prezent-anul >1 || anul > prezent) // in general, o masina este produsa timp de 1 ani. Daca diferenta de data este mai mare de 1 ani -> masina e SH , ceeea ce corespunde acestui tip.
+        try
+        {
+            in >> anul;
+            if(in.fail())
+                throw " !Se pare ca nu ati introdus o valoare numerica valida. Programul va seta anul la cel curent." ;
+        }
+        catch(const char *e4)
+        {
+            in.ignore(256,'\n');
+            in.clear();
+            string dummy;
+            in >> dummy;
+            cout << e4 << '\n';
+            anul= prezent;
+        }
+        while(prezent-anul >1 || anul > prezent)
         {
             cout << "Ati introdus un an necorespunzator acestui tip de masina" << '\n';
             cout << "Aceasta masina nu poate fi mai veche de 1 an. Introduceti din nou anul: " << '\n';
-            in >> anul;
+            try
+            {
+                in >> anul;
+                if(in.fail())
+                    throw " !Se pare ca nu ati introdus o valoare numerica valida. Programul va seta anul la cel curent." ;
+            }
+            catch(const char *e4)
+            {
+                in.ignore(256,'\n');
+                in.clear();
+                string dummy;
+                in >> dummy;
+                cout << e4 << '\n';
+                anul= prezent;
+            }
         }
 
         p3.set_lungime(lg);
         p3.set_an(anul);
         p3.set_ampatament(amp);
-        p3.set_tip_masina("Mica");
+        p3.set_tip_masina(temp);
 
         in.get();
 
@@ -559,25 +889,25 @@ public:
 };
 
 
-void Mica::set_lungime(float x)
+void Mica::set_lungime(double x)
 {
-    lungime=x;
+    lungime = x;
 }
 void Mica::set_an(int x)
 {
     an=x;
 }
-void Mica::set_ampatament(float x)
+void Mica::set_ampatament(double x)
 {
-    ampatament=x;
+    ampatament = x;
 }
 
 
-float Mica::get_lungime() const
+double Mica::get_lungime() const
 {
     return lungime;
 }
-float Mica::get_ampatament() const
+double Mica::get_ampatament() const
 {
     return ampatament;
 }
@@ -604,11 +934,11 @@ class Compacta: public masini{
 
 protected:
 
-    float lungime;
+    double lungime;
     int an;
     string forma;
 
-    void set_lungime(float x);
+    void set_lungime(double x);
     void set_an(int x);
     void set_forma(char y[10001]);
     void set_forma_null();
@@ -617,22 +947,77 @@ public:
 
     Compacta():masini()
     {
+        char temp[10001]="Compacta";
         set_lungime(0);
         set_an(0);
         set_forma_null();
-        set_tip_masina("Compacta");
+        set_tip_masina(temp);
     }
 
 
-    Compacta(float p, int l, char nume[10001], float lg, char y[10001], int anul):masini(p,l,nume)
+    Compacta(double p, int l, char nume[10001], double lg, char y[10001], int anul):masini(p,l,nume)
     {
-        set_lungime(lg);
-        if (prezent-anul > 1 || anul > prezent)
+        char temp[10001]="Compacta";
+
+
+        try
+        {
+            if(lg > 4.5 || lg < 4.2)
+                throw " !Lungimea introdusa nu apartine intervalului [4.2 , 4.5]";
+            else
+                set_lungime(lg);
+        }
+        catch(const char *e5)
+        {
+            cout << e5 << '\n';
+            cout << " Programul va seta lungimea ca fiind cel ami apropiat capat al intervalului." << '\n';
+            if(lg>4.5)
+                lg=4.5;
+            else
+                lg=4.2;
+            set_lungime(lg);
+        }
+
+
+        try
+        {
+            if(prezent-anul > 1 || anul > prezent)
+                throw " !Ati introdus un an prea vechi sau inexistent pentru o masina tip Compacta.";
+            else
+                set_an(anul);
+        }
+        catch(const char *e5)
+        {
+            cout << e5 << '\n';
+            cout << " Programul va seta anul masinii ca fiind anul curent." << '\n';
             set_an(prezent);
-        else
-            set_an(anul);
-        set_forma(y);
-        set_tip_masina("Compacta");
+        }
+
+
+        try
+        {
+            if(strcmp(y,"sedan")!=0 && strcmp(y,"combi")!=0 && strcmp(y,"hatchback")!=0)
+                throw " !Forma introdusa nu este compatibila cu o masina tip Compacta";
+            else
+                set_forma(y);
+        }
+        catch(const char *e5)
+        {
+            int j;
+            cout << e5 << '\n';
+            cout << " Programul va seta o forma aleatorie" << '\n';
+            j=rand() % 3 + 1;
+            if(j==1)
+                strcpy(y,"sedan");
+            else
+            if(j==2)
+                strcpy(y,"combi");
+            else
+                strcpy(y,"hatchback");
+            set_forma(y);
+        }
+
+        set_tip_masina(temp);
     }
 
 
@@ -680,7 +1065,7 @@ public:
 
     }
 
-    float get_lungime() const;
+    double get_lungime() const;
     string get_forma() const;
 
     int get_anul() const;
@@ -691,8 +1076,9 @@ public:
 
     friend istream &operator>>(istream &in, Compacta &p4)
     {
-        float lg;
+        double lg;
         char ch[10001];
+        char temp[10001]="Compacta";
         int anul;
 
 
@@ -710,28 +1096,86 @@ public:
             in.getline(ch,10001);
         }
 
-        cout << "Introduceti lungimea masinii (min 4.2  , max 4.5): ";
-        in >> lg;
-        while (lg > 4.5 || lg <4.2 )
+
+        cout << "Introduceti lungimea masinii ( minim 4.2 , maxim 4.5): ";
+        try
         {
-            cout << "Ati introdus dimensiuni necorespunzatoare!" << '\n';
-            cout << "O masina Compacta are lungimea de minim 4.2m si maxim 4.5m. Introduceti din nou lungimea:" << '\n';
             in >> lg;
+            if(in.fail())
+                throw " !Se pare ca nu ati introdus o valoare numerica valida. Programul va seta automat o lungime acceptabila." ;
+        }
+        catch(const char *e5)
+        {
+            in.ignore(256,'\n');
+            in.clear();
+            string dummy;
+            in >> dummy;
+            cout << e5 << '\n';
+            lg=4.4;
+        }
+        while (lg > 4.5 || lg < 4.2 )
+        {
+            cout << "Ati introdus dimensiuni necorespunzatoare acestui tip de masina" << '\n';
+            cout << "Lungimea unei masini Mini este de maxim 4.5m si minim 4.2m. Introduceti din nou lungimea:" << '\n';
+            try
+            {
+                in >> lg;
+                if(in.fail())
+                    throw " !Se pare ca nu ati introdus o valoare numerica valida. Programul va seta automat o lungime acceptabila." ;
+            }
+            catch(const char *e5)
+            {
+                in.ignore(256,'\n');
+                in.clear();
+                string dummy;
+                in >> dummy;
+                cout << e5 << '\n';
+                lg=4.4;
+            }
         }
 
+
         cout << "Introduceti anul de fabricatie al masinii: ";
-        in >> anul;
-        while(prezent-anul >1 || anul>prezent) // in general, o masina este produsa timp de 1 ani. Daca diferenta de data este mai mare de 1 ani -> masina e SH , ceeea ce corespunde acestui tip.
+        try
+        {
+            in >> anul;
+            if(in.fail())
+                throw " !Se pare ca nu ati introdus o valoare numerica valida. Programul va seta anul la cel curent." ;
+        }
+        catch(const char *e5)
+        {
+            in.ignore(256,'\n');
+            in.clear();
+            string dummy;
+            in >> dummy;
+            cout << e5 << '\n';
+            anul= prezent;
+        }
+        while(prezent-anul >1 || anul > prezent)
         {
             cout << "Ati introdus un an necorespunzator acestui tip de masina" << '\n';
             cout << "Aceasta masina nu poate fi mai veche de 1 an. Introduceti din nou anul: " << '\n';
-            in >> anul;
+            try
+            {
+                in >> anul;
+                if(in.fail())
+                    throw " !Se pare ca nu ati introdus o valoare numerica valida. Programul va seta anul la cel curent." ;
+            }
+            catch(const char *e5)
+            {
+                in.ignore(256,'\n');
+                in.clear();
+                string dummy;
+                in >> dummy;
+                cout << e5 << '\n';
+                anul= prezent;
+            }
         }
 
         p4.set_lungime(lg);
         p4.set_an(anul);
         p4.set_forma(ch);
-        p4.set_tip_masina("Compacta");
+        p4.set_tip_masina(temp);
 
         in.get();
 
@@ -761,22 +1205,28 @@ public:
         return out;
     }
 
-    ~Compacta() = default;
+    ~Compacta()
+    {
+        if(forma != "")
+            forma.clear();
+        lungime=0;
+        an=0;
+    }
 
 };
 
 
-void Compacta::set_lungime(float x)
+void Compacta::set_lungime(double x)
 {
-    lungime=x;
+    lungime = x;
 }
 void Compacta::set_an(int x)
 {
-    an=x;
+    an = x;
 }
 void Compacta::set_forma(char y[100001])
 {
-    forma=y;
+    forma = y;
 }
 void Compacta::set_forma_null()
 {
@@ -784,7 +1234,7 @@ void Compacta::set_forma_null()
 }
 
 
-float Compacta::get_lungime() const
+double Compacta::get_lungime() const
 {
     return lungime;
 }
@@ -817,33 +1267,60 @@ protected:
 
     int nr_locuri;
     int an;
-    string forma="van";
+    const string forma="van";
 
     void set_locuri(int x);
     void set_an(int x);
 
-    void set_forma_van();
 
 public:
 
     Monovolum():masini()
     {
+        char temp[10001]="Monovolum";
         set_locuri(0);
         set_an(0);
-        set_forma_van();
-        set_tip_masina("Monovolum");
+        set_tip_masina(temp);
     }
 
 
-    Monovolum(float p, int l, char nume[10001], int lc, int anul):masini(p,l,nume)
+    Monovolum(double p, int l, char nume[10001], int lc, int anul):masini(p,l,nume)
     {
-        set_locuri(lc);
-        if (anul > prezent)
+        char temp[10001]="Monovolum";
+
+
+        try
+        {
+            if(lc > 7 || lc < 5)
+                throw " !Numarul maxim de locuri introdus nu apartine intervalului [5 , 7]";
+            else
+                set_locuri(lc);
+        }
+        catch(const char *e6)
+        {
+            cout << e6 << '\n';
+            cout << " Programul va seta aleatoriu numarul maxim de locuri" << '\n';
+            lc=rand() % 7 + 5;
+            set_locuri(lc);
+        }
+
+
+        try
+        {
+            if( anul > prezent || anul <=0)
+                throw " !Ati introdus un an inexistent pentru o masina tip Monovolum.";
+            else
+                set_an(anul);
+        }
+        catch(const char *e6)
+        {
+            cout << e6 << '\n';
+            cout << " Programul va seta anul masinii ca fiind anul curent." << '\n';
             set_an(prezent);
-        else
-            set_an(anul);
-        set_forma_van();
-        set_tip_masina("Monovolum");
+        }
+
+
+        set_tip_masina(temp);
     }
 
 
@@ -894,32 +1371,91 @@ public:
     {
         int lc;
         int anul;
+        char temp[10001]="Monovolum";
 
 
         cout << "Se vor introduce datele masinii: "<< '\n';
 
         in >> (masini&) p5;
 
-        cout << "Introduceti numarul maxim de locuri al masinii (maxim 5 - 7): ";
-        in >> lc;
-        while (lc > 7 || lc <5 )
+
+        cout << "Introduceti numarul maxim de locuri al masinii (min 5, max 7): ";
+        try
+        {
+            in >> lc;
+            if(in.fail())
+                throw " !Se pare ca nu ati introdus o valoare numerica valida. Programul va seta numarul maxim de locuri aleatoriu." ;
+        }
+        catch(const char *e6)
+        {
+            in.ignore(256,'\n');
+            in.clear();
+            string dummy;
+            in >> dummy;
+            cout << e6 << '\n';
+            lc=rand() % 7 + 5;
+        }
+        while (lc <5 || lc >7)
         {
             cout << "Numar de locuri necorespunzator!" << '\n';
-            cout << "O masina Monovolum are intre 5 si 7 locuri. Introduceti din nou lungimea:" << '\n';
-            in >> lc;
+            cout << "O masina Monovolum are intre 5 si 7 locuri. Introduceti din nou nr locuri:" << '\n';
+            try
+            {
+                in >> lc;
+                if(in.fail())
+                    throw " !Se pare ca nu ati introdus o valoare numerica valida. Programul va seta numarul maxim de locuri aleatoriu." ;
+            }
+            catch(const char *e6)
+            {
+                in.ignore(256,'\n');
+                in.clear();
+                string dummy;
+                in >> dummy;
+                cout << e6 << '\n';
+                lc=rand() % 7 + 5;
+            }
         }
 
+
         cout << "Introduceti anul de fabricatie al masinii: ";
-        in >> anul;
-        while(anul>prezent) // Monovolumele pot fi SH ( considerat mai vechi de 1 an in cazul nostru) , dar nu pot fi S-F :) (nefabricate inca)
+        try
         {
-            cout << "Oops! Se pare ca masina nu a fost fabricata inca. Incercati din nou anul: " << '\n';
             in >> anul;
+            if(in.fail())
+                throw " !Se pare ca nu ati introdus o valoare numerica valida. Programul va seta anul la cel curent." ;
+        }
+        catch(const char *e5)
+        {
+            in.ignore(256,'\n');
+            in.clear();
+            string dummy;
+            in >> dummy;
+            cout << e5 << '\n';
+            anul= prezent;
+        }
+        while(anul > prezent || anul <= 0)
+        {
+            cout << "Oops! Se pare ca masina nu a fost fabricata inca. Incercati din nou anul:" << '\n';
+            try
+            {
+                in >> anul;
+                if(in.fail())
+                    throw " !Se pare ca nu ati introdus o valoare numerica valida. Programul va seta anul la cel curent." ;
+            }
+            catch(const char *e5)
+            {
+                in.ignore(256,'\n');
+                in.clear();
+                string dummy;
+                in >> dummy;
+                cout << e5 << '\n';
+                anul= prezent;
+            }
         }
 
         p5.set_locuri(lc);
         p5.set_an(anul);
-        p5.set_tip_masina("Monovolum");
+        p5.set_tip_masina(temp);
 
         in.get();
 
@@ -963,13 +1499,6 @@ void Monovolum::set_an(int x)
     an=x;
 }
 
-void Monovolum::set_forma_van()
-{
-    if(forma != "")
-        forma.clear();
-    forma="van";
-}
-
 
 int Monovolum::get_locuri() const
 {
@@ -999,40 +1528,6 @@ void Monovolum::citire_masina()
 
 /// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 /// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-
-template <class T>
-void copiere_masini(T *&c6,  T *p6)
-{
-    char ch[10001], temp[10001];
-
-    strcpy(ch, p6->get_tip().c_str());
-
-    if(strcmp(ch,"Mini")==0)
-    {
-        strcpy(temp, p6->get_denumire().c_str());
-        c6=new Mini(p6->get_pret(), p6->get_litraj(), temp, static_cast<Mini*>(p6)->get_lungime(), static_cast<Mini*>(p6)->get_anul());
-
-    }
-    else
-    if(strcmp(ch,"Mica")==0)
-    {
-        strcpy(temp, p6->get_denumire().c_str());
-        c6=new Mica(p6->get_pret(), p6->get_litraj(), temp, static_cast<Mica*>(p6)->get_lungime(), static_cast<Mica*>(p6)->get_ampatament(), static_cast<Mica*>(p6)->get_anul());
-
-    }
-    else
-    if(strcmp(ch,"Compacta")==0)
-    {
-        char temp1[11];
-
-        strcpy(temp, p6->get_denumire().c_str());
-        strcpy(temp1, static_cast<Compacta*>(p6)->get_forma().c_str());
-
-        c6=new Compacta(p6->get_pret(), p6->get_litraj(), temp, static_cast<Compacta*>(p6)->get_lungime(), temp1, static_cast<Compacta*>(p6)->get_anul());
-
-    }
-}
 
 
 template <class T>
@@ -1071,7 +1566,21 @@ public:
         int i;
         char ch[10001];
 
-        set_nr_stock(nr1);
+        try
+        {
+            if(nr1<0)
+                throw " !Se pare ca nu ati introdus o dimensiune valida.";
+            else
+                set_nr_stock(nr1);
+        }
+        catch(const char *e7)
+        {
+            cout << e7 << '\n';
+            cout << "Dimensiunea stock-ului va fi setata la 0" << '\n';
+            set_nr_stock(0);
+        }
+
+        set_nr_vandute(0);
 
         set_vandute_null();
 
@@ -1105,13 +1614,13 @@ public:
 
                 }
                 else
-                throw(ch);
+                throw "Nu exista acest tip de autovehicul.";
             }
-            catch(char ch[10001])
+            catch(const char *e1)
             {
                 cout << '\n';
-                cout << "Nu exista acest tip de autovehicul." << '\n';
-                cout << "Tipurile de autovehicule gestionabile sunt: " << '\n';
+                cout << e1 << '\n';
+                cout << "Tipurile de autovehicule gestionabile aici sunt: " << '\n';
                 cout << "  Mini, Mica, Compacta" << '\n';
                 i--;
             }
@@ -1227,15 +1736,15 @@ public:
 
     void make_this_set();
 
-    template <class Y> /// Daca puneam T compilatorul imi spune : " error:  shadows template parm class T ... ". De ce ?
-    friend void copiere_masini(T *&c6,  T *p6);
+    /// Daca puneam T compilatorul imi spune : " error:  shadows template parm ‘class T’ ... ". De ce ?
+    static void copiere_masini(T *&c6,  T *p6);
 
     Vanzare &operator-=(int n)
     {
         int i;
         string vect[n];
 
-        cout <<"Se doreste a se vinde " << n << " masini.";
+        cout <<"Se doreste a se vinde " << n << " masini de tipuri diverse.";
         cout << '\n';
         for(i=0;i<n;++i)
         {
@@ -1258,7 +1767,42 @@ public:
         cout << '\n';
         cout << "Cate masini de diverse tipuri doriti sa aveti?" << '\n';
 
-        in >> nr;
+        try
+        {
+            in >> nr;
+            if(in.fail())
+                throw " !Se pare ca nu ati introdus o valoare numerica valida. Programul va seta numarul la 0." ;
+        }
+        catch(const char *e11)
+        {
+            in.ignore(256,'\n');
+            in.clear();
+            string dummy;
+            in >> dummy;
+            cout << e11 << '\n';
+            nr=0;
+        }
+        while (nr<0)
+        {
+            cout << '\n';
+            cout << "Ati introdus un nr negativ. Introduceti din nou numarul:";
+            try
+            {
+                in >> nr;
+                if(in.fail())
+                    throw " !Se pare ca nu ati introdus o valoare numerica valida. Programul va seta numarul la 0." ;
+            }
+            catch(const char *e11)
+            {
+                in.ignore(256,'\n');
+                in.clear();
+                string dummy;
+                in >> dummy;
+                cout << e11 << '\n';
+                nr=0;
+            }
+        }
+
         in.get();
 
         p5 = Vanzare(nr);
@@ -1286,10 +1830,20 @@ public:
 
     ~Vanzare()
     {
+        int i;
         if(stock != NULL)
+        {
+            for(i=1;i<=get_nr_stock();++i)
+                delete stock[i];
             delete[] stock;
+        }
+
         if(vandute != NULL)
+        {
+            for(i=1;i<=get_nr_vandute();++i)
+                delete vandute[i];
             delete[] vandute;
+        }
     }
 
 
@@ -1308,7 +1862,7 @@ void Vanzare<T>::set_nr_vandute(int nr2)
 template <class T>
 void Vanzare<T>::set_stock(int nr3)
 {
-    if(nr3 == 0)
+    if(nr3 <= 0)
         set_stock_null();
     else
         stock=new T*[nr3+1];
@@ -1316,11 +1870,10 @@ void Vanzare<T>::set_stock(int nr3)
 template <class T>
 void Vanzare<T>::set_vandute(int nr4)
 {
-    if(nr4 == 0)
+    if(nr4 <= 0)
         set_vandute_null();
     else
         vandute=new T*[nr4+1];
-
 }
 template <class T>
 void Vanzare<T>::set_stock_null()
@@ -1496,13 +2049,49 @@ void Vanzare<T>::vinde(string v)
         else
         {
             cout << '\n';
-            cout << "Se pare ca masina respectiva nu mai este pe stock-ul parcului auto" << '\n';
+            cout << "Se pare ca masina respectiva nu mai este pe stock-ul parcului auto sau parcul este deocamdata gol!" << '\n';
             cout << " Tranzactia nu s-a putut efectua!" << '\n';
             cout << '\n';
         }
     }
 
 }
+
+
+template <class T>
+void Vanzare<T>::copiere_masini(T *&c6,  T *p6)
+{
+    char ch[10001], temp[10001];
+
+    strcpy(ch, p6->get_tip().c_str());
+
+    if(strcmp(ch,"Mini")==0)
+    {
+        strcpy(temp, p6->get_denumire().c_str());
+        c6=new Mini(p6->get_pret(), p6->get_litraj(), temp, static_cast<Mini*>(p6)->get_lungime(), static_cast<Mini*>(p6)->get_anul());
+
+    }
+    else
+    if(strcmp(ch,"Mica")==0)
+    {
+        strcpy(temp, p6->get_denumire().c_str());
+        c6=new Mica(p6->get_pret(), p6->get_litraj(), temp, static_cast<Mica*>(p6)->get_lungime(), static_cast<Mica*>(p6)->get_ampatament(), static_cast<Mica*>(p6)->get_anul());
+
+    }
+    else
+    if(strcmp(ch,"Compacta")==0)
+    {
+        char temp1[11];
+
+        strcpy(temp, p6->get_denumire().c_str());
+        strcpy(temp1, static_cast<Compacta*>(p6)->get_forma().c_str());
+
+        c6=new Compacta(p6->get_pret(), p6->get_litraj(), temp, static_cast<Compacta*>(p6)->get_lungime(), temp1, static_cast<Compacta*>(p6)->get_anul());
+
+    }
+}
+
+
 template <class T>
 void Vanzare<T>::make_this_set()
 {
@@ -1525,7 +2114,8 @@ void Vanzare<T>::make_this_set()
 
     if(get_nr_stock()<=0)
     {
-        cout << "Set GOL !" << '\n';
+        cout << "Set GOL ! Se pare ca parcul nu are nimic pe stock." << '\n';
+        cout << '\n';
     }
     else
     {
@@ -1578,7 +2168,21 @@ public:
     {
         int i;
 
-        set_nr_stock(nr1);
+        try
+        {
+            if(nr1<0)
+                throw " !Se pare ca nu ati introdus o dimensiune valida.";
+            else
+                set_nr_stock(nr1);
+        }
+        catch(const char *e7)
+        {
+            cout << e7 << '\n';
+            cout << "Dimensiunea stock-ului va fi setata la 0" << '\n';
+            set_nr_stock(0);
+        }
+
+        set_nr_vandute(0);
 
         set_vandute_null();
 
@@ -1706,7 +2310,42 @@ public:
         cout << '\n';
         cout << "Cate masini tip Monovolum doriti sa aveti?" << '\n';
 
-        in >> nr;
+        try
+        {
+            in >> nr;
+            if(in.fail())
+                throw " !Se pare ca nu ati introdus o valoare numerica valida. Programul va seta numarul la 0." ;
+        }
+        catch(const char *e11)
+        {
+            in.ignore(256,'\n');
+            in.clear();
+            string dummy;
+            in >> dummy;
+            cout << e11 << '\n';
+            nr=0;
+        }
+        while (nr<0)
+        {
+            cout << '\n';
+            cout << "Ati introdus un nr negativ. Introduceti din nou numarul:";
+            try
+            {
+                in >> nr;
+                if(in.fail())
+                    throw " !Se pare ca nu ati introdus o valoare numerica valida. Programul va seta numarul la 0." ;
+            }
+            catch(const char *e11)
+            {
+                in.ignore(256,'\n');
+                in.clear();
+                string dummy;
+                in >> dummy;
+                cout << e11 << '\n';
+                nr=0;
+            }
+        }
+
         in.get();
 
         p5 = Vanzare(nr);
@@ -1719,12 +2358,12 @@ public:
         out << "Numarul de masini tip Monovolum de pe stock este: " << '\n';
         out << p5.get_nr_stock();
         out << '\n';
-        p5.afisare_stock(); // nu mergea daca nu era const
+        p5.afisare_stock();
         out << '\n';
         out << "Numarul de masini tip Monovolum vandute este:" << '\n';
         out << p5.get_nr_vandute() << '\n';
         out << '\n';
-        p5.istoric_vanzari(); // nu mergea daca nu era const
+        p5.istoric_vanzari();
         out << '\n';
 
         return out;
@@ -1756,7 +2395,7 @@ void Vanzare<Monovolum>::set_nr_vandute(int nr2)
 
 void Vanzare<Monovolum>::set_stock(int nr3)
 {
-    if(nr3 == 0)
+    if(nr3 <= 0)
         set_stock_null();
     else
         stock=new Monovolum[nr3+1];
@@ -1764,7 +2403,7 @@ void Vanzare<Monovolum>::set_stock(int nr3)
 
 void Vanzare<Monovolum>::set_vandute(int nr4)
 {
-    if(nr4 == 0)
+    if(nr4 <= 0)
         set_vandute_null();
     else
         vandute=new Monovolum[nr4+1];
@@ -1853,10 +2492,11 @@ void Vanzare<Monovolum>::vinde()
                 set_nr_vandute(1);
                 set_vandute(get_nr_vandute());
 
-                int rd=0;
+                double rd=0;
                 Monovolum stock_t;
                 stock_t = stock[k];
                 rd=masini::prezent - static_cast<Monovolum*>(&stock_t)->get_anul();
+
                 if(rd>1)
                     stock[k].aplica_reducere2(rd);  /// Am considerat ca masinile noi sa nu fie mai vechi de 1 an. Masinile mai vechi de un an sunt SH.
 
@@ -1867,7 +2507,8 @@ void Vanzare<Monovolum>::vinde()
             }
             else
             {
-                int m=0,rd=0;
+                int m=0;
+                double rd=0;
 
                 Monovolum stock_t;
                 stock_t = stock[k];
@@ -1948,7 +2589,7 @@ void Vanzare<Monovolum>::vinde()
         else
         {
             cout << '\n';
-            cout << "Se pare ca masina respectiva nu mai este pe stock-ul parcului auto" << '\n';
+            cout << "Se pare ca masina respectiva nu mai este pe stock-ul parcului auto sau parcul este deocamdata gol!" << '\n';
             cout << " Tranzactia nu s-a putut efectua!" << '\n';
             cout << '\n';
         }
@@ -1982,7 +2623,8 @@ void Vanzare<Monovolum>::make_this_set()
     cout << '\n';
     if(get_nr_stock()<=0)
     {
-        cout << "Set GOL !" << '\n';
+        cout << "Set GOL ! Se pare ca parcul nu are nimic pe stock." << '\n';
+        cout << '\n';
     }
     else
     {
@@ -2012,45 +2654,157 @@ int masini::prezent=1900 + point->tm_year;
 int main()
 {
 
-    int nr=2;
-    string s1="Mini";
-    Vanzare<masini> o1(nr);
-    Vanzare<masini> o3;
 
-    o3=Vanzare<masini>(o1);
+    int choice, nr_op;
+    bool status = true;
 
-    cout << '\n';
-    cout << "Mai departe se va vinde 1 masina de tip Mini ( daca doriti sa schimbati - > stringul s1)" << '\n';
-    cout << '\n';
-
-    o3-=1;
-
+    Vanzare<masini> o1;
     Vanzare<Monovolum> o2;
 
-    cin >> o2;
-    cout << '\n';
-    cout << o2;
+    while (status != false)
+    {
+        cout << "***************************************************************************************************\n";
+        cout << " 1 - Introduceti masini de tip diverse in parcul auto (Se citesc n obiecte tip Compacta/Mini/Mica ).\n";
+        cout << " 2 - Afisati stock-ul si istoricul de vanzari de masini tip diverse.\n";
+        cout << " 3 - Introduceti masini tip Monovolum in parcul auto (Se citesc n obiecte de tip Monovolum ).\n";
+        cout << " 4 - Afisati stock-ul si istoricul de vanzari de masini tip Monovolum.\n";
+        cout << " 5 - Vindeti una sau mai multe masini tip Compacta / Mini / Mica. \n";
+        cout << " 6 - Vindeti una sau mai multe masini tip Monovolum.\n";
+        cout << " 7 - Sa sa creeze si afiseze structura Set<pairs> cu masinile tip diverse din stock.\n";
+        cout << " 8 - Sa se creeze si afiseze structura Set<pairs> cu masinile tip Monovolum din stick.\n";
+        cout << " 9 - END.\n";
+        cout << "***************************************************************************************************\n";
+        cout << " Introduceti optiunea si apasati tasta enter: ";
 
+        try
+        {
+            cin >> choice;
+            if(cin.fail())
+                throw " !Se pare ca nu ati introdus o valoare numerica valida. Programul va seta optiunea la valoarea 9." ;
+        }
+        catch(const char *e10)
+        {
+            cin.ignore(256,'\n');
+            cin.clear();
+            string dummy;
+            cin >> dummy;
+            cout << e10 << '\n';
+            choice=9;
+        }
 
-    cout << '\n';
-    cout << "Mai departe se vor vinde 2 masini de tip Monovolum" << '\n';
-    cout << '\n';
+        switch (choice)
+        {
+            case 1:
+            cin >> o1;
+            break;
+            case 2:
+            cout << o1;
+            break;
+            case 3:
+            cin >> o2;
+            break;
+            case 4:
+            cout << o2;
+            break;
+            case 5:
+            nr_op=0;
+            cout << '\n';
+            cout << "Cate masini tip diverse doriti sa vindeti?" << '\n';
+            try
+            {
+                cin >> nr_op;
+                if(cin.fail())
+                    throw " !Se pare ca nu ati introdus o valoare numerica valida. Programul va seta numarul la 0." ;
+            }
+            catch(const char *e10)
+            {
+                cin.ignore(256,'\n');
+                cin.clear();
+                string dummy;
+                cin >> dummy;
+                cout << e10 << '\n';
+                nr_op=0;
+            }
+            while (nr_op<0)
+            {
+                cout << '\n';
+                cout << "Ati introdus un nr negativ. Introduceti din nou numarul:";
+                try
+                {
+                    cin >> nr_op;
+                    if(cin.fail())
+                        throw " !Se pare ca nu ati introdus o valoare numerica valida. Programul va seta numarul la 0." ;
+                }
+                catch(const char *e10)
+                {
+                    cin.ignore(256,'\n');
+                    cin.clear();
+                    string dummy;
+                    cin >> dummy;
+                    cout << e10 << '\n';
+                    nr_op=0;
+                }
+            }
+            o1-=nr_op;
+            break;
+            case 6:
+            nr_op=0;
+            cout << '\n';
+            cout << "Cate masini tip Monovolum doriti sa vindeti?" << '\n';
+            try
+            {
+                cin >> nr_op;
+                if(cin.fail())
+                    throw " !Se pare ca nu ati introdus o valoare numerica valida. Programul va seta numarul la 0." ;
+            }
+            catch(const char *e10)
+            {
+                cin.ignore(256,'\n');
+                cin.clear();
+                string dummy;
+                cin >> dummy;
+                cout << e10 << '\n';
+                nr_op=0;
+            }
+            while (nr_op<0)
+            {
+                cout << '\n';
+                cout << "Ati introdus un nr negativ. Introduceti din nou numarul:";
+                try
+                {
+                    cin >> nr_op;
+                    if(cin.fail())
+                        throw " !Se pare ca nu ati introdus o valoare numerica valida. Programul va seta numarul la 0." ;
+                }
+                catch(const char *e10)
+                {
+                    cin.ignore(256,'\n');
+                    cin.clear();
+                    string dummy;
+                    cin >> dummy;
+                    cout << e10 << '\n';
+                    nr_op=0;
+                }
+            }
+            o2-=nr_op;
+            break;
+            case 7:
+            o1.make_this_set();
+            break;
+            case 8:
+            o2.make_this_set();
+            break;
+            case 9:
+            cout << "Sfarsitul programului! \n";
+            status = false;
+            break;
+            default:
+            cout << "Ati introdus o optiune invalida. \n";
+            cout << "Alegeti optiunea din nou:\n";
+            cin >> choice;
+            break;
+        }
 
-    o2.vinde();
-    o2-=1;
-
-    cout << o2;
-    cout << '\n';
-    cout << o3;
-
-
-    cout << '\n';
-    cout << "Mai departe se vor afisa cele 2 structuri Set:" << '\n';
-    cout << '\n';
-
-    o3.make_this_set();
-
-    o2.make_this_set();
-
+    }
     return 0;
 }
